@@ -172,11 +172,11 @@
     </div>
 
     <script>
-        // デフォルトで明日の日付をセット
+        // デフォルトで「1週間後の日付」をセット
         const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        document.getElementById('nextDate').value = tomorrow.toISOString().split('T')[0];
+        const nextWeekDay = new Date(today);
+        nextWeekDay.setDate(nextWeekDay.getDate() + 7);
+        document.getElementById('nextDate').value = nextWeekDay.toISOString().split('T')[0];
 
         function generateSchedule() {
             const nextDateStr = document.getElementById('nextDate').value;
@@ -250,8 +250,6 @@
                 loopDate.setDate(loopDate.getDate() + 1);
             }
 
-            const distributionOrder = weekendIndices.concat(weekdayIndices);
-
             // 各課題ごとに日割りを計算
             for (let t = 0; t < validTasks.length; t++) {
                 const task = validTasks[t];
@@ -261,8 +259,13 @@
                 const remainder = totalAmount % diffDays;
 
                 let dailyAmounts = new Array(diffDays).fill(baseAmount);
+                
+                // 変更点：土日があれば土日のみに割り振る。なければ平日に割り振る。
+                const targetIndices = weekendIndices.length > 0 ? weekendIndices : weekdayIndices;
+                
+                // 余りをターゲットの日に順番にプラスする（余りが多い場合はループして土日に何度も積まれる）
                 for (let i = 0; i < remainder; i++) {
-                    dailyAmounts[distributionOrder[i % diffDays]] += 1;
+                    dailyAmounts[targetIndices[i % targetIndices.length]] += 1;
                 }
 
                 let currentStartPage = task.startPage;
