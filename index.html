@@ -156,46 +156,71 @@
             // 総ページ数の計算
             const totalAmount = endPage - startPage + 1;
             
-            // 日割り計算
+            // 日割り計算のベース
             const baseAmount = Math.floor(totalAmount / diffDays);
-            let remainder = totalAmount % diffDays;
+            const remainder = totalAmount % diffDays;
 
-            let resultText = `【宿題：${taskName}】\n`;
+            // 各日付のデータを生成
+            let daysData = [];
             let loopDate = new Date(currentDate);
+            let weekendIndices = [];
+            let weekdayIndices = [];
+
+            for (let i = 0; i < diffDays; i++) {
+                const dayOfWeek = loopDate.getDay(); // 0:日, 6:土
+                daysData.push({
+                    dateObj: new Date(loopDate),
+                    dayOfWeek: dayOfWeek,
+                    amount: baseAmount
+                });
+
+                // 土日か平日かでインデックスを分ける
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    weekendIndices.push(i);
+                } else {
+                    weekdayIndices.push(i);
+                }
+
+                loopDate.setDate(loopDate.getDate() + 1);
+            }
+
+            // 余りの割り当て順を決定（土日を優先、その後に平日）
+            const distributionOrder = weekendIndices.concat(weekdayIndices);
+
+            // 余りを順番に+1ずつ割り振る
+            for (let i = 0; i < remainder; i++) {
+                // 万が一余りが日数より多くてもループして割り振る
+                const targetIndex = distributionOrder[i % diffDays];
+                daysData[targetIndex].amount += 1;
+            }
+
+            // 出力テキストの生成
+            let resultText = `【宿題：${taskName}】\n`;
             let currentStartPage = startPage;
 
             for (let i = 0; i < diffDays; i++) {
-                // 余りがある場合は、最初の数日間に1ページずつプラス
-                const dailyAmount = baseAmount + (remainder > 0 ? 1 : 0);
-                remainder--;
+                const dayData = daysData[i];
+                const dailyAmount = dayData.amount;
 
-                const month = loopDate.getMonth() + 1;
-                const date = loopDate.getDate();
-                const dayOfWeekStr = [ "日", "月", "火", "水", "木", "金", "土" ][loopDate.getDay()];
+                const month = dayData.dateObj.getMonth() + 1;
+                const date = dayData.dateObj.getDate();
+                const dayOfWeekStr = [ "日", "月", "火", "水", "木", "金", "土" ][dayData.dayOfWeek];
                 
                 let dailyAssignment = "";
 
                 if (dailyAmount === 0) {
-                    // ページ数が日数より少ない場合などの「割り当てなし」の日
                     dailyAssignment = "なし";
                 } else {
                     const currentEndPage = currentStartPage + dailyAmount - 1;
                     if (currentStartPage === currentEndPage) {
-                        // 1日1ページだけの場合（例：p.10）
                         dailyAssignment = `${currentStartPage}${unit}`;
                     } else {
-                        // 複数ページの場合（例：p.10〜15）
                         dailyAssignment = `${currentStartPage}〜${currentEndPage}${unit}`;
                     }
-                    // 次の日の開始ページを更新
                     currentStartPage = currentEndPage + 1;
                 }
 
-                // 出力テキストに追加
                 resultText += `${month}/${date}(${dayOfWeekStr}) : ${dailyAssignment}\n`;
-
-                // 日付を1日進める
-                loopDate.setDate(loopDate.getDate() + 1);
             }
 
             document.getElementById('output').value = resultText;
