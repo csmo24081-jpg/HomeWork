@@ -10,7 +10,7 @@
             background-color: #f7f9fc;
             color: #333;
             padding: 20px;
-            max-width: 500px;
+            max-width: 600px;
             margin: 0 auto;
         }
         h1 {
@@ -24,6 +24,28 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             margin-bottom: 15px;
+        }
+        .task-card {
+            background: #fdfdfd;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .task-card h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+            display: inline-block;
+        }
+        .optional-badge {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            font-weight: normal;
+            margin-left: 10px;
         }
         label {
             display: block;
@@ -91,31 +113,66 @@
     <div class="form-group">
         <label for="nextDate">次回授業日</label>
         <input type="date" id="nextDate" required>
+    </div>
 
-        <label for="taskName">宿題の内容（例：数学ワーク）</label>
-        <input type="text" id="taskName" placeholder="数学ワーク" required>
+    <div class="task-card">
+        <h3>課題 1</h3>
+        <label>宿題の内容（例：数学ワーク）</label>
+        <input type="text" id="taskName1" placeholder="数学ワーク">
 
         <label>範囲（開始〜終了）</label>
         <div class="flex-row">
-            <input type="number" id="startPage" placeholder="10" required min="0">
+            <input type="number" id="startPage1" placeholder="10" min="0">
             <span>〜</span>
-            <input type="number" id="endPage" placeholder="30" required min="0">
+            <input type="number" id="endPage1" placeholder="30" min="0">
         </div>
 
-        <label for="unit">単位</label>
-        <input type="text" id="unit" placeholder="ページ" value="ページ">
-
-        <button class="btn-primary" onclick="generateSchedule()">日割りを計算する</button>
+        <label>単位</label>
+        <input type="text" id="unit1" value="ページ">
     </div>
+
+    <div class="task-card">
+        <h3>課題 2<span class="optional-badge">※任意</span></h3>
+        <label>宿題の内容（例：英単語）</label>
+        <input type="text" id="taskName2" placeholder="英単語">
+
+        <label>範囲（開始〜終了）</label>
+        <div class="flex-row">
+            <input type="number" id="startPage2" placeholder="1" min="0">
+            <span>〜</span>
+            <input type="number" id="endPage2" placeholder="50" min="0">
+        </div>
+
+        <label>単位</label>
+        <input type="text" id="unit2" value="個">
+    </div>
+
+    <div class="task-card">
+        <h3>課題 3<span class="optional-badge">※任意</span></h3>
+        <label>宿題の内容（例：漢字ドリル）</label>
+        <input type="text" id="taskName3" placeholder="漢字ドリル">
+
+        <label>範囲（開始〜終了）</label>
+        <div class="flex-row">
+            <input type="number" id="startPage3" placeholder="20" min="0">
+            <span>〜</span>
+            <input type="number" id="endPage3" placeholder="25" min="0">
+        </div>
+
+        <label>単位</label>
+        <input type="text" id="unit3" value="ページ">
+    </div>
+
+    <button class="btn-primary" onclick="generateSchedule()">日割りを計算する</button>
 
     <div class="form-group">
         <label for="output">出力結果</label>
-        <textarea id="output" rows="10" readonly placeholder="ここに日割りされた宿題が出力されます"></textarea>
+        <textarea id="output" rows="15" readonly placeholder="ここに日割りされた宿題が出力されます"></textarea>
         <button class="btn-copy" onclick="copyToClipboard()">ワンタッチでコピー</button>
     </div>
 
     <script>
-        // 今日の日付をデフォルトでセット（操作しやすいように明日の日付に）
+        // デフォルトで明日の日付をセット
         const today = new Date();
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -123,25 +180,44 @@
 
         function generateSchedule() {
             const nextDateStr = document.getElementById('nextDate').value;
-            const taskName = document.getElementById('taskName').value || '宿題';
-            const startPage = parseInt(document.getElementById('startPage').value);
-            const endPage = parseInt(document.getElementById('endPage').value);
-            const unit = document.getElementById('unit').value || '';
+            
+            // 入力された課題を収集
+            let validTasks = [];
+            for (let i = 1; i <= 3; i++) {
+                const name = document.getElementById(`taskName${i}`).value.trim();
+                const startStr = document.getElementById(`startPage${i}`).value;
+                const endStr = document.getElementById(`endPage${i}`).value;
+                const unit = document.getElementById(`unit${i}`).value.trim();
 
-            // 入力チェック
-            if (!nextDateStr || isNaN(startPage) || isNaN(endPage)) {
-                alert('すべての項目を正しく入力してください。');
+                // 1つでも入力されていればチェックする
+                if (name || startStr || endStr) {
+                    if (!name || !startStr || !endStr) {
+                        alert(`課題${i} の「内容」「開始」「終了」はすべて入力してください。不要な場合は空欄にしてください。`);
+                        return;
+                    }
+                    const startPage = parseInt(startStr);
+                    const endPage = parseInt(endStr);
+                    
+                    if (isNaN(startPage) || isNaN(endPage) || startPage > endPage) {
+                        alert(`課題${i} の範囲指定が間違っています（開始ページ≦終了ページにしてください）。`);
+                        return;
+                    }
+                    validTasks.push({ name, startPage, endPage, unit });
+                }
+            }
+
+            if (!nextDateStr) {
+                alert('次回授業日を設定してください。');
                 return;
             }
-            if (startPage > endPage) {
-                alert('終了ページは、開始ページ以上の数字にしてください。');
+            if (validTasks.length === 0) {
+                alert('少なくとも1つの課題を入力してください。');
                 return;
             }
 
             const nextDate = new Date(nextDateStr);
             const currentDate = new Date();
             
-            // 日付の差分を計算（今日から次回授業日の前日まで）
             currentDate.setHours(0,0,0,0);
             nextDate.setHours(0,0,0,0);
             
@@ -153,77 +229,90 @@
                 return;
             }
 
-            // 総ページ数の計算
-            const totalAmount = endPage - startPage + 1;
-            
-            // 日割り計算のベース
-            const baseAmount = Math.floor(totalAmount / diffDays);
-            const remainder = totalAmount % diffDays;
-
-            // 各日付のデータを生成
-            let daysData = [];
+            // 日付ベースのスケジュール配列を作成
+            let scheduleData = [];
             let loopDate = new Date(currentDate);
             let weekendIndices = [];
             let weekdayIndices = [];
 
             for (let i = 0; i < diffDays; i++) {
                 const dayOfWeek = loopDate.getDay(); // 0:日, 6:土
-                daysData.push({
+                scheduleData.push({
                     dateObj: new Date(loopDate),
                     dayOfWeek: dayOfWeek,
-                    amount: baseAmount
+                    tasks: [] // その日にやるべき課題リスト
                 });
 
-                // 土日か平日かでインデックスを分ける
                 if (dayOfWeek === 0 || dayOfWeek === 6) {
                     weekendIndices.push(i);
                 } else {
                     weekdayIndices.push(i);
                 }
-
                 loopDate.setDate(loopDate.getDate() + 1);
             }
 
-            // 余りの割り当て順を決定（土日を優先、その後に平日）
+            // 土日優先の割り当て順序
             const distributionOrder = weekendIndices.concat(weekdayIndices);
 
-            // 余りを順番に+1ずつ割り振る
-            for (let i = 0; i < remainder; i++) {
-                // 万が一余りが日数より多くてもループして割り振る
-                const targetIndex = distributionOrder[i % diffDays];
-                daysData[targetIndex].amount += 1;
-            }
-
-            // 出力テキストの生成
-            let resultText = `【宿題：${taskName}】\n`;
-            let currentStartPage = startPage;
-
-            for (let i = 0; i < diffDays; i++) {
-                const dayData = daysData[i];
-                const dailyAmount = dayData.amount;
-
-                const month = dayData.dateObj.getMonth() + 1;
-                const date = dayData.dateObj.getDate();
-                const dayOfWeekStr = [ "日", "月", "火", "水", "木", "金", "土" ][dayData.dayOfWeek];
+            // 各課題ごとに日割りを計算し、スケジュール配列に格納
+            for (let t = 0; t < validTasks.length; t++) {
+                const task = validTasks[t];
+                const totalAmount = task.endPage - task.startPage + 1;
                 
-                let dailyAssignment = "";
+                const baseAmount = Math.floor(totalAmount / diffDays);
+                const remainder = totalAmount % diffDays;
 
-                if (dailyAmount === 0) {
-                    dailyAssignment = "なし";
-                } else {
-                    const currentEndPage = currentStartPage + dailyAmount - 1;
-                    if (currentStartPage === currentEndPage) {
-                        dailyAssignment = `${currentStartPage}${unit}`;
-                    } else {
-                        dailyAssignment = `${currentStartPage}〜${currentEndPage}${unit}`;
-                    }
-                    currentStartPage = currentEndPage + 1;
+                // その課題の各日割り当て量を配列化
+                let dailyAmounts = new Array(diffDays).fill(baseAmount);
+                for (let i = 0; i < remainder; i++) {
+                    dailyAmounts[distributionOrder[i % diffDays]] += 1;
                 }
 
-                resultText += `${month}/${date}(${dayOfWeekStr}) : ${dailyAssignment}\n`;
+                let currentStartPage = task.startPage;
+
+                for (let i = 0; i < diffDays; i++) {
+                    const amount = dailyAmounts[i];
+                    let assignmentText = "";
+
+                    if (amount === 0) {
+                        assignmentText = "なし";
+                    } else {
+                        const currentEndPage = currentStartPage + amount - 1;
+                        if (currentStartPage === currentEndPage) {
+                            assignmentText = `${currentStartPage}${task.unit}`;
+                        } else {
+                            assignmentText = `${currentStartPage}〜${currentEndPage}${task.unit}`;
+                        }
+                        currentStartPage = currentEndPage + 1;
+                    }
+
+                    // その日のタスクリストに追加
+                    scheduleData[i].tasks.push({
+                        name: task.name,
+                        assignment: assignmentText
+                    });
+                }
             }
 
-            document.getElementById('output').value = resultText;
+            // 出力テキストの生成（日別にグループ化）
+            const nextMonth = nextDate.getMonth() + 1;
+            const nextDay = nextDate.getDate();
+            let resultText = `【次回授業：${nextMonth}/${nextDay}】\n\n`;
+
+            for (let i = 0; i < scheduleData.length; i++) {
+                const data = scheduleData[i];
+                const month = data.dateObj.getMonth() + 1;
+                const date = data.dateObj.getDate();
+                const dayOfWeekStr = [ "日", "月", "火", "水", "木", "金", "土" ][data.dayOfWeek];
+                
+                resultText += `■ ${month}/${date}(${dayOfWeekStr})\n`;
+                for (let j = 0; j < data.tasks.length; j++) {
+                    resultText += `・${data.tasks[j].name} : ${data.tasks[j].assignment}\n`;
+                }
+                resultText += `\n`;
+            }
+
+            document.getElementById('output').value = resultText.trim();
         }
 
         function copyToClipboard() {
@@ -240,5 +329,3 @@
             });
         }
     </script>
-</body>
-</html>
