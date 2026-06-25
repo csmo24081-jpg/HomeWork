@@ -43,12 +43,15 @@
         .flex-row {
             display: flex;
             gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
         }
         .flex-row input[type="number"] {
-            flex: 2;
-        }
-        .flex-row input[type="text"] {
             flex: 1;
+            margin-bottom: 0;
+        }
+        .flex-row span {
+            font-weight: bold;
         }
         button {
             width: 100%;
@@ -92,11 +95,15 @@
         <label for="taskName">宿題の内容（例：数学ワーク）</label>
         <input type="text" id="taskName" placeholder="数学ワーク" required>
 
-        <label>総量と単位</label>
+        <label>範囲（開始〜終了）</label>
         <div class="flex-row">
-            <input type="number" id="totalAmount" placeholder="30" required min="1">
-            <input type="text" id="unit" placeholder="ページ" value="ページ">
+            <input type="number" id="startPage" placeholder="10" required min="0">
+            <span>〜</span>
+            <input type="number" id="endPage" placeholder="30" required min="0">
         </div>
+
+        <label for="unit">単位</label>
+        <input type="text" id="unit" placeholder="ページ" value="ページ">
 
         <button class="btn-primary" onclick="generateSchedule()">日割りを計算する</button>
     </div>
@@ -108,7 +115,7 @@
     </div>
 
     <script>
-        // 今日の日付をデフォルトでセット（操作しやすいように明日の日付にしておきます）
+        // 今日の日付をデフォルトでセット（操作しやすいように明日の日付に）
         const today = new Date();
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -117,16 +124,23 @@
         function generateSchedule() {
             const nextDateStr = document.getElementById('nextDate').value;
             const taskName = document.getElementById('taskName').value || '宿題';
-            const totalAmount = parseInt(document.getElementById('totalAmount').value);
+            const startPage = parseInt(document.getElementById('startPage').value);
+            const endPage = parseInt(document.getElementById('endPage').value);
             const unit = document.getElementById('unit').value || '';
 
-            if (!nextDateStr || isNaN(totalAmount) || totalAmount <= 0) {
-                alert('次回授業日と総量を正しく入力してください。');
+            // 入力チェック
+            if (!nextDateStr || isNaN(startPage) || isNaN(endPage)) {
+                alert('すべての項目を正しく入力してください。');
+                return;
+            }
+            if (startPage > endPage) {
+                alert('終了ページは、開始ページ以上の数字にしてください。');
                 return;
             }
 
             const nextDate = new Date(nextDateStr);
             const currentDate = new Date();
+            
             // 日付の差分を計算（今日から次回授業日の前日まで）
             currentDate.setHours(0,0,0,0);
             nextDate.setHours(0,0,0,0);
@@ -139,15 +153,19 @@
                 return;
             }
 
+            // 総ページ数の計算
+            const totalAmount = endPage - startPage + 1;
+            
             // 日割り計算
             const baseAmount = Math.floor(totalAmount / diffDays);
             let remainder = totalAmount % diffDays;
 
             let resultText = `【宿題：${taskName}】\n`;
             let loopDate = new Date(currentDate);
+            let currentStartPage = startPage;
 
             for (let i = 0; i < diffDays; i++) {
-                // 余りがある場合は、最初の数日間に1ずつプラスして割り振る
+                // 余りがある場合は、最初の数日間に1ページずつプラス
                 const dailyAmount = baseAmount + (remainder > 0 ? 1 : 0);
                 remainder--;
 
@@ -155,8 +173,26 @@
                 const date = loopDate.getDate();
                 const dayOfWeekStr = [ "日", "月", "火", "水", "木", "金", "土" ][loopDate.getDay()];
                 
-                // 例: 6/26(水) : 5ページ
-                resultText += `${month}/${date}(${dayOfWeekStr}) : ${dailyAmount}${unit}\n`;
+                let dailyAssignment = "";
+
+                if (dailyAmount === 0) {
+                    // ページ数が日数より少ない場合などの「割り当てなし」の日
+                    dailyAssignment = "なし";
+                } else {
+                    const currentEndPage = currentStartPage + dailyAmount - 1;
+                    if (currentStartPage === currentEndPage) {
+                        // 1日1ページだけの場合（例：p.10）
+                        dailyAssignment = `${currentStartPage}${unit}`;
+                    } else {
+                        // 複数ページの場合（例：p.10〜15）
+                        dailyAssignment = `${currentStartPage}〜${currentEndPage}${unit}`;
+                    }
+                    // 次の日の開始ページを更新
+                    currentStartPage = currentEndPage + 1;
+                }
+
+                // 出力テキストに追加
+                resultText += `${month}/${date}(${dayOfWeekStr}) : ${dailyAssignment}\n`;
 
                 // 日付を1日進める
                 loopDate.setDate(loopDate.getDate() + 1);
