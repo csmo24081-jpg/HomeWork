@@ -117,7 +117,7 @@
 
     <div class="task-card">
         <h3>課題 1</h3>
-        <label>宿題の内容</label>
+        <label>宿題の内容（例：数学ワーク）</label>
         <input type="text" id="taskName1" placeholder="数学ワーク">
 
         <label>範囲（開始〜終了）</label>
@@ -127,24 +127,24 @@
             <input type="number" id="endPage1" placeholder="30" min="0">
         </div>
 
-        <label>単位</label>
-        <input type="text" id="unit1" value="ページ">
+        <label>単位（空欄でもOK）</label>
+        <input type="text" id="unit1" placeholder="ページ、単元、問など">
     </div>
 
     <div class="task-card">
         <h3>課題 2<span class="optional-badge">※任意</span></h3>
         <label>宿題の内容</label>
-        <input type="text" id="taskName2" placeholder="英単語">
+        <input type="text" id="taskName2" placeholder="英語長文">
 
         <label>範囲（開始〜終了）</label>
         <div class="flex-row">
             <input type="number" id="startPage2" placeholder="1" min="0">
             <span>〜</span>
-            <input type="number" id="endPage2" placeholder="50" min="0">
+            <input type="number" id="endPage2" placeholder="5" min="0">
         </div>
 
-        <label>単位</label>
-        <input type="text" id="unit2" value="個">
+        <label>単位（空欄でもOK）</label>
+        <input type="text" id="unit2" placeholder="ページ、単元、問など">
     </div>
 
     <div class="task-card">
@@ -159,8 +159,8 @@
             <input type="number" id="endPage3" placeholder="25" min="0">
         </div>
 
-        <label>単位</label>
-        <input type="text" id="unit3" value="ページ">
+        <label>単位（空欄でもOK）</label>
+        <input type="text" id="unit3" placeholder="ページ、単元、問など">
     </div>
 
     <button class="btn-primary" onclick="generateSchedule()">日割りを計算する</button>
@@ -189,7 +189,6 @@
                 const endStr = document.getElementById(`endPage${i}`).value;
                 const unit = document.getElementById(`unit${i}`).value.trim();
 
-                // 1つでも入力されていればチェックする
                 if (name || startStr || endStr) {
                     if (!name || !startStr || !endStr) {
                         alert(`課題${i} の「内容」「開始」「終了」はすべて入力してください。不要な場合は空欄にしてください。`);
@@ -236,11 +235,11 @@
             let weekdayIndices = [];
 
             for (let i = 0; i < diffDays; i++) {
-                const dayOfWeek = loopDate.getDay(); // 0:日, 6:土
+                const dayOfWeek = loopDate.getDay();
                 scheduleData.push({
                     dateObj: new Date(loopDate),
                     dayOfWeek: dayOfWeek,
-                    tasks: [] // その日にやるべき課題リスト
+                    tasks: []
                 });
 
                 if (dayOfWeek === 0 || dayOfWeek === 6) {
@@ -251,10 +250,9 @@
                 loopDate.setDate(loopDate.getDate() + 1);
             }
 
-            // 土日優先の割り当て順序
             const distributionOrder = weekendIndices.concat(weekdayIndices);
 
-            // 各課題ごとに日割りを計算し、スケジュール配列に格納
+            // 各課題ごとに日割りを計算
             for (let t = 0; t < validTasks.length; t++) {
                 const task = validTasks[t];
                 const totalAmount = task.endPage - task.startPage + 1;
@@ -262,7 +260,6 @@
                 const baseAmount = Math.floor(totalAmount / diffDays);
                 const remainder = totalAmount % diffDays;
 
-                // その課題の各日割り当て量を配列化
                 let dailyAmounts = new Array(diffDays).fill(baseAmount);
                 for (let i = 0; i < remainder; i++) {
                     dailyAmounts[distributionOrder[i % diffDays]] += 1;
@@ -286,7 +283,6 @@
                         currentStartPage = currentEndPage + 1;
                     }
 
-                    // その日のタスクリストに追加
                     scheduleData[i].tasks.push({
                         name: task.name,
                         assignment: assignmentText
@@ -294,7 +290,7 @@
                 }
             }
 
-            // 出力テキストの生成（日別にグループ化）
+            // 出力テキストの生成
             const nextMonth = nextDate.getMonth() + 1;
             const nextDay = nextDate.getDate();
             let resultText = `【次回授業：${nextMonth}/${nextDay}】\n\n`;
@@ -329,3 +325,5 @@
             });
         }
     </script>
+</body>
+</html>
